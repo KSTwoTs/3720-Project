@@ -1,0 +1,8 @@
+:focus {
+outline: 3px solid #444;
+outline-offset: 2px;
+}
+
+
+main { max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
+button { cursor: pointer; }
