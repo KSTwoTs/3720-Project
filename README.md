@@ -257,29 +257,29 @@ POST /api/events/:id/purchase → { message, eventId, remaining }
 ## 14. Scripts (optional enhancements)
 
 Add to backend/admin-service/package.json:
-
+```
 "scripts": {
   "start": "node server.js",
   "dev": "NODE_ENV=development node server.js"
 }
-
+```
 
 Add to backend/client-service/package.json:
-
+```
 "scripts": {
   "start": "node server.js",
   "dev": "NODE_ENV=development node server.js"
 }
-
+```
 
 Add to frontend/package.json:
-
+```
 "scripts": {
   "dev": "vite",
   "build": "vite build",
   "preview": "vite preview"
 }
-
+```
 ## 15. Code Quality
 
 Separation of concerns: routes → controllers → models
