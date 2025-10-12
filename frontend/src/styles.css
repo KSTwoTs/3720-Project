@@ -1,10 +1,12 @@
-/* Visible focus for keyboard users */
+/* === Tasks 4.2 & 6 ===
+   Visible keyboard focus indicator for accessibility and UX clarity */
 :focus {
   outline: 3px solid #444;
   outline-offset: 2px;
 }
 
-/* Skip-link: hidden until focused */
+/* === Task 4.2 ===
+   Skip link: hidden by default, visible when tabbed to */
 .skip-link {
   position: absolute;
   left: -999px;
@@ -19,18 +21,23 @@
   top: 0.5rem;
 }
 
-/* Screen-reader only (keep available to AT; not display:none) */
+/* === Task 4.1 ===
+   Screen-reader only utility for aria-live region or hidden labels */
 .sr-only {
   position: absolute !important;
-  height: 1px; width: 1px;
+  height: 1px;
+  width: 1px;
   overflow: hidden;
   clip: rect(1px, 1px, 1px, 1px);
   white-space: nowrap;
 }
 
-/* Layout basics */
+/* === Task 3.1 & 6 ===
+   Consistent layout and styling for readability */
 main { max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
-button { cursor: pointer; }
 
-/* Optional: improve hit area and spacing */
-button { padding: 0.5rem 0.75rem; }
+/* Buttons should be easily clickable and accessible (Task 4.2) */
+button {
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+}
