@@ -1,3 +1,9 @@
+// === Task 1.3 ===
+// Middleware to authenticate API key from headers
+// - 401 for missing/invalid keys
+// - 500 if key not loaded from .env (server config issue)
+// Task 6: Good logging + simple flow improves maintainability
+
 export default function apiKeyAuth(req, res, next) {
   const incomingKey = req.header('x-api-key');
   const expectedKey = process.env.ADMIN_API_KEY;
@@ -16,5 +22,5 @@ export default function apiKeyAuth(req, res, next) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
-  next();
+  next(); // proceed to controller if valid
 }
