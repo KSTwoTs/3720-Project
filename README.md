@@ -21,6 +21,7 @@ A minimal two-service ticketing app:
 ---
 
 ## 2. Project Structure
+```text
 TigerTix/
 ├── backend/
 │ ├── shared-db/
@@ -47,7 +48,7 @@ TigerTix/
 ├── components/
 │ └── EventList.jsx
 └── styles.css
-
+```
 
 **Ports:** Admin → 5001 | Client → 6001 | Frontend → 5173
 
@@ -60,7 +61,7 @@ Open the `TigerTix/` folder in **VS Code**.
 Open **three terminals** (Terminal → New Terminal).
 
 If running on Windows PowerShell, temporarily allow scripts:
-```
+```bash
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 ```
 ## 4. Install & Run — Admin Service (5001)
