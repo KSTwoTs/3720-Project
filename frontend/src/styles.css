@@ -1,8 +1,36 @@
+/* Visible focus for keyboard users */
 :focus {
-outline: 3px solid #444;
-outline-offset: 2px;
+  outline: 3px solid #444;
+  outline-offset: 2px;
 }
 
+/* Skip-link: hidden until focused */
+.skip-link {
+  position: absolute;
+  left: -999px;
+  top: 0;
+  background: #fff;
+  padding: 0.5rem 1rem;
+  border: 2px solid #000;
+  z-index: 1000;
+}
+.skip-link:focus {
+  left: 0.5rem;
+  top: 0.5rem;
+}
 
+/* Screen-reader only (keep available to AT; not display:none) */
+.sr-only {
+  position: absolute !important;
+  height: 1px; width: 1px;
+  overflow: hidden;
+  clip: rect(1px, 1px, 1px, 1px);
+  white-space: nowrap;
+}
+
+/* Layout basics */
 main { max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
 button { cursor: pointer; }
+
+/* Optional: improve hit area and spacing */
+button { padding: 0.5rem 0.75rem; }

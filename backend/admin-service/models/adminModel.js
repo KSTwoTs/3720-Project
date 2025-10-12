@@ -12,11 +12,14 @@ const db = new sqlite3.Database(dbPath);
 
 
 export function createEvent({ name, date, tickets }) {
-return new Promise((resolve, reject) => {
-const stmt = `INSERT INTO events (name, date, tickets) VALUES (?, ?, ?)`;
-db.run(stmt, [name, date, tickets], function (err) {
-if (err) return reject(err);
-resolve({ id: this.lastID, name, date, tickets });
-});
-});
+  return new Promise((resolve, reject) => {
+    const stmt = `INSERT INTO events (name, date, tickets) VALUES (?, ?, ?)`;
+    db.run(stmt, [name, date, tickets], function (err) {
+      if (err) {
+        console.error('SQL INSERT error:', err.message);
+        return reject(err);
+      }
+      resolve({ id: this.lastID, name, date, tickets });
+    });
+  });
 }
