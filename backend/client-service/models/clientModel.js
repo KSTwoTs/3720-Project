@@ -1,9 +1,5 @@
-// Task 2.1 — Data access for listing events
-// Task 2.2 — Purchase (decrement tickets)
-// Task 2.3 — DB consistency under load (atomic updates)
-// Task 5.1 — Safe concurrent updates (transaction prevents race conditions)
-// Task 5.2 — Consistent DB state (no negative tickets)
-// Task 6   — Code quality (parameterized SQL, small focused functions)
+// controllers/models/clientModel.js
+// Step 2: Atomic purchase using a single SQLite transaction and optional guarded UPDATE.
 
 import sqlite3 from 'sqlite3';
 import path from 'path';
@@ -11,11 +7,12 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const dbPath = path.join(__dirname, '../../shared-db/database.sqlite');
 
+// Path points to shared DB (kept consistent with your project layout)
+const dbPath = path.join(__dirname, '../../shared-db/database.sqlite');
 const db = new sqlite3.Database(dbPath);
 
-// Task 2.1: Return full event list; handles empty DB ([]) gracefully
+// List all events for the client app
 export function getAllEvents() {
   return new Promise((resolve, reject) => {
     db.all(
@@ -26,40 +23,59 @@ export function getAllEvents() {
   });
 }
 
-// Task 2.2/2.3 + Task 5.1/5.2: Atomic decrement using a transaction
-export function purchaseTicket(eventId) {
+/**
+ * Atomically purchase `qty` tickets for `eventId`.
+ * Uses BEGIN IMMEDIATE to obtain the write lock up front, then:
+ *  1) SELECT tickets
+ *  2) Validate availability
+ *  3) UPDATE tickets = tickets - qty
+ *  4) COMMIT
+ * If anything fails → ROLLBACK and reject with a descriptive Error.
+ */
+export function purchaseTicket(eventId, qty = 1) {
   return new Promise((resolve, reject) => {
     db.serialize(() => {
-      db.run('BEGIN IMMEDIATE TRANSACTION'); // obtains write lock up front
+      db.run('BEGIN IMMEDIATE TRANSACTION', (beginErr) => {
+        if (beginErr) return reject(beginErr);
 
-      // Read current stock
-      db.get('SELECT tickets FROM events WHERE id = ?', [eventId], (err, row) => {
-        if (err) {
-          db.run('ROLLBACK');
-          return reject(err);
-        }
-        if (!row) {
-          db.run('ROLLBACK');
-          return reject(new Error('Event not found')); // 404 in controller
-        }
-        if (row.tickets <= 0) {
-          db.run('ROLLBACK');
-          return reject(new Error('Sold out')); // 409 in controller
-        }
+        db.get(
+          'SELECT tickets FROM events WHERE id = ?',
+          [eventId],
+          (selErr, row) => {
+            if (selErr) {
+              return db.run('ROLLBACK', () => reject(selErr));
+            }
+            if (!row) {
+              return db.run('ROLLBACK', () => reject(new Error('Event not found')));
+            }
+            if (row.tickets <= 0 || row.tickets < qty) {
+              const reason = row.tickets <= 0 ? 'Sold out' : 'Not enough tickets';
+              return db.run('ROLLBACK', () => reject(new Error(reason)));
+            }
 
-        // Decrement by 1
-        db.run('UPDATE events SET tickets = tickets - 1 WHERE id = ?', [eventId], (err2) => {
-          if (err2) {
-            db.run('ROLLBACK');
-            return reject(err2);
+            // Guarded UPDATE to prevent underflow even if concurrent checks slipped (belt & suspenders)
+            db.run(
+              'UPDATE events SET tickets = tickets - ? WHERE id = ? AND tickets >= ?',
+              [qty, eventId, qty],
+              function (updErr) {
+                if (updErr) {
+                  return db.run('ROLLBACK', () => reject(updErr));
+                }
+                if (this.changes === 0) {
+                  // Someone else grabbed them in between the SELECT and UPDATE
+                  return db.run('ROLLBACK', () => reject(new Error('Not enough tickets')));
+                }
+
+                db.run('COMMIT', (comErr) => {
+                  if (comErr) {
+                    return db.run('ROLLBACK', () => reject(comErr));
+                  }
+                  resolve({ eventId, remaining: row.tickets - qty });
+                });
+              }
+            );
           }
-
-          // Commit final state
-          db.run('COMMIT', (err3) => {
-            if (err3) return reject(err3);
-            resolve({ eventId, remaining: row.tickets - 1 });
-          });
-        });
+        );
       });
     });
   });

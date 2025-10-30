@@ -34,10 +34,35 @@
 
 /* === Task 3.1 & 6 ===
    Consistent layout and styling for readability */
-main { max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
+main {
+  max-width: 1200px;   /* was 720px */
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
 
 /* Buttons should be easily clickable and accessible (Task 4.2) */
 button {
   cursor: pointer;
   padding: 0.5rem 0.75rem;
+}
+
+/* Grid wrapper used in App.jsx */
+.app-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr; /* stack on small screens */
+}
+
+/* Two columns on medium+ screens */
+@media (min-width: 900px) {
+  .app-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Simple panel styling for both sections */
+.panel {
+  border: 1px solid #e3e3e3;
+  border-radius: 8px;
+  padding: 12px;
 }
