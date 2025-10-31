@@ -1,15 +1,1 @@
-{
-"name": "tigertix-client-service",
-"version": "1.0.0",
-"type": "module",
-"main": "server.js",
-"scripts": {
-"start": "node server.js",
-"dev": "NODE_ENV=development node server.js"
-},
-"dependencies": {
-"cors": "^2.8.5",
-"express": "^4.19.2",
-"sqlite3": "^5.1.7"
-}
-}
+{"name":"tigertix-client-service","version":"1.0.0","type":"module","main":"server.js","scripts":{"start":"node server.js","dev":"NODE_ENV=development node server.js"},"dependencies":{"cors":"^2.8.5","express":"^4.19.2","sqlite3":"^5.1.7"},"devDependencies":{"@jest/globals":"^30.2.0","cross-fetch":"^4.1.0","jest":"^30.2.0","supertest":"^7.1.4","whatwg-url":"^15.1.0"}}
