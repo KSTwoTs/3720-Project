@@ -9,7 +9,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Path points to shared DB (kept consistent with your project layout)
-const dbPath = path.join(__dirname, '../../shared-db/database.sqlite');
+const dbPath = process.env.DB_PATH
+  ? process.env.DB_PATH
+  : path.join(__dirname, '../../shared-db/database.sqlite');
 const db = new sqlite3.Database(dbPath);
 
 // List all events for the client app

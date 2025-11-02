@@ -21,3 +21,4 @@ app.use('/api', clientRoutes);
 // By spec, client service runs on 6001 (frontend points here)
 const PORT = process.env.PORT || 6001;
 app.listen(PORT, () => console.log(`Client service running on port ${PORT}`));
+export default app;

@@ -69,6 +69,17 @@ JSON:
       temperature: 0,
     });
     return JSON.parse(r.choices[0].message.content);
+
+  } if (provider === 'mock') {
+    // Deterministic output for tests
+    const m = userText.toLowerCase();
+    if (m.includes('show') || m.includes('list')) {
+      return { intent: 'show_events', confidence: 0.9 };
+    }
+    const tickets = /\b(\d+)\b/.exec(m)?.[1] ? Number(/\b(\d+)\b/.exec(m)[1]) : 1;
+    const eventName = /for (.+)$/i.exec(userText)?.[1] || 'Jazz Night';
+    return { intent: 'propose_booking', eventName, tickets, confidence: 0.9 };
+    
   } else {
     // OLLAMA (default)
     const r = await axios.post(
@@ -190,4 +201,10 @@ app.post('/api/llm/confirm', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => console.log(`[llm-driven-booking] listening on :${PORT}`));
+// Only listen when run directly (not when required by tests)
+if (require.main === module) {
+  app.listen(PORT, () => console.log(`[llm-driven-booking] listening on :${PORT}`));
+}
+
+// Export the Express app so Supertest can mount it
+module.exports = app;

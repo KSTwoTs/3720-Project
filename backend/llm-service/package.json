@@ -8,9 +8,7 @@
     "test": "jest --runInBand"
   },
   "jest": {
-    "testEnvironment": "node",
-    "transform": {},
-    "moduleFileExtensions": ["js","jsx","json"]
+    "testEnvironment": "node"
   },
   "keywords": [],
   "author": "",
