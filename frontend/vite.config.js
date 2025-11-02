@@ -15,7 +15,7 @@ export default defineConfig({
       '/api/admin': {
         target: 'http://localhost:5001',
         changeOrigin: true,
-        // If your admin server expects plain /api/... you can rewrite:
+        // If admin server expects plain /api/... you can rewrite:
         // rewrite: (path) => path.replace(/^\/api\/admin/, '/api'),
       },
       // Client service (events + purchase) — catch-all for the rest of /api
@@ -24,5 +24,12 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+  },
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: './src/setupTests.js', // use existing setup file
+    css: true,               // (optional) allow importing CSS in tests
+    restoreMocks: true,
   },
 });
