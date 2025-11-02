@@ -158,7 +158,7 @@ Open the printed URL (usually http://localhost:5173).
 You’ll see a list of events (empty at first) and a Buy Ticket button per event.
 
 ## 6. Using the APIs (Postman / cURL)
-7.1 Create an event (Admin, requires API key)
+6.1 Create an event (Admin, requires API key)
 
 Postman
 Method: POST
@@ -180,13 +180,13 @@ curl -X POST http://localhost:5001/api/admin/events \
   -H "x-api-key: super-secret-key-change-me" \
   -d '{"name":"CS Club Expo","date":"2025-11-25","tickets":100}'
 ```
-7.2 List events (Client)
+6.2 List events (Client)
 Method: GET
 URL: http://localhost:6001/api/events
 ```
 curl http://localhost:6001/api/events
 ```
-7.3 Purchase a ticket (Client)
+6.3 Purchase a ticket (Client)
 Method: POST
 URL: http://localhost:6001/api/events/:id/purchase
 Replace :id with a real ID returned by /api/events:
