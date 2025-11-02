@@ -147,7 +147,7 @@ npm start
 
 ## 5. Install & Run — Frontend (5173)
 
-Terminal 3
+Terminal 4
 ```
 cd frontend
 npm install
