@@ -1,0 +1,88 @@
+name: TigerTix CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  # 1) Run backend tests (admin, client, llm) in a matrix
+  test-backend:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - backend/admin-service
+          - backend/client-service
+          - backend/llm-service
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: ${{ matrix.service }}
+        run: npm install
+
+      - name: Run backend tests
+        working-directory: ${{ matrix.service }}
+        run: npm test
+
+  # 2) Run frontend tests
+  test-frontend:
+    runs-on: ubuntu-latest
+    needs: test-backend
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm install
+
+      - name: Run frontend tests
+        working-directory: frontend
+        run: npm run test:run
+
+  # 3) If all tests pass, trigger deployments
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Trigger Vercel deploy
+        run: |
+          curl -X POST "$VERCEL_DEPLOY_HOOK"
+        env:
+          VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+
+      - name: Trigger Render admin-service deploy
+        run: |
+          curl -X POST "$RENDER_ADMIN_HOOK"
+        env:
+          RENDER_ADMIN_HOOK: ${{ secrets.RENDER_ADMIN_HOOK }}
+
+      - name: Trigger Render client-service deploy
+        run: |
+          curl -X POST "$RENDER_CLIENT_HOOK"
+        env:
+          RENDER_CLIENT_HOOK: ${{ secrets.RENDER_CLIENT_HOOK }}
+
+      - name: Trigger Render llm-service deploy
+        run: |
+          curl -X POST "$RENDER_LLM_HOOK"
+        env:
+          RENDER_LLM_HOOK: ${{ secrets.RENDER_LLM_HOOK }}
