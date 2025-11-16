@@ -7,8 +7,10 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 
-// API base URL for the client-service microservice (Task 3.2 integration)
-const API_BASE = 'http://localhost:6001/api';
+// API base URL for the client-service microservice
+// In dev: falls back to localhost:6001
+const API_BASE =
+  import.meta.env.VITE_CLIENT_API_URL || 'http://localhost:6001';
 
 export default function EventList() {
   // === Task 6: Clear state management ===
@@ -22,7 +24,7 @@ export default function EventList() {
   async function fetchEvents() {
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE}/events`);
+      const res = await fetch(`${API_BASE}/api/events`);
       const data = await res.json();
       setEvents(data.events || []); // handles no-data case gracefully
     } catch (err) {
@@ -65,7 +67,7 @@ export default function EventList() {
   // === Task 3.2: Purchase functionality ===
   async function handleBuy(id, name) {
     try {
-      const res = await fetch(`${API_BASE}/events/${id}/purchase`, { method: 'POST' });
+      const res = await fetch(`${API_BASE}/api/events/${id}/purchase`, { method: 'POST' });
       const body = await res.json();
 
       if (!res.ok) throw new Error(body.error || 'Purchase failed');
