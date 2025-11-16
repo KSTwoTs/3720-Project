@@ -73,16 +73,16 @@ jobs:
         run: |
           curl -X POST "$RENDER_ADMIN_SERVICE_DEPLOY_HOOK"
         env:
-          RENDER_ADMIN_HOOK: ${{ secrets.RENDER_ADMIN_HOOK }}
+          RENDER_ADMIN_HOOK: ${{ secrets.RENDER_ADMIN_SERVICE_DEPLOY_HOOK }}
 
       - name: Trigger Render client-service deploy
         run: |
           curl -X POST "$RENDER_CLIENT_SERVICE_DEPLOY_HOOK"
         env:
-          RENDER_CLIENT_HOOK: ${{ secrets.RENDER_CLIENT_HOOK }}
+          RENDER_CLIENT_HOOK: ${{ secrets.RENDER_CLIENT_SERVICE_DEPLOY_HOOK }}
 
       - name: Trigger Render llm-service deploy
         run: |
           curl -X POST "$RENDER_LLM_SERVICE_DEPLOY_HOOK"
         env:
-          RENDER_LLM_HOOK: ${{ secrets.RENDER_LLM_HOOK }}
+          RENDER_LLM_HOOK: ${{ secrets.RENDER_LLM_SERVICE_DEPLOY_HOOK }}
