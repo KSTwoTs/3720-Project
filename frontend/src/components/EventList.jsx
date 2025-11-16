@@ -25,7 +25,9 @@ export default function EventList() {
       const res = await fetch(`${API_BASE}/events`);
       const data = await res.json();
       setEvents(data.events || []); // handles no-data case gracefully
-    } catch {
+    } catch (err) {
+      console.error('Failed to load events', err);
+      // This will be a no-op for DOM access in tests because announce is guarded
       announce('Failed to load events'); // accessible error message
     } finally {
       setLoading(false);
@@ -42,7 +44,19 @@ export default function EventList() {
   // === Task 4.1 – Accessibility helper ===
   // Announces text changes to screen readers via aria-live region.
   function announce(text) {
+    // Always update React state (safe in tests, doesn’t require DOM)
     setMessage(text);
+
+    // In Node / non-DOM envs (Vitest default), bail out before touching the DOM
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return;
+    }
+
+    // Lazily resolve the live region if we don't have it yet
+    if (!statusRef.current) {
+      statusRef.current = document.getElementById('status-region');
+    }
+
     if (statusRef.current) {
       statusRef.current.textContent = text;
     }
