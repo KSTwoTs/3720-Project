@@ -4,7 +4,7 @@
 
 import { Router } from 'express';
 import { listEvents, buyTicket } from '../controllers/clientController.js';
-
+import { requireAuth } from '../middleware/authMiddleware.js';
 
 const router = Router();
 
@@ -12,7 +12,6 @@ const router = Router();
 router.get('/events', listEvents); // Task 2.1
 
 // POST /api/events/:id/purchase
-router.post('/events/:id/purchase', buyTicket); // Task 2.2
-
+router.post('/events/:id/purchase', requireAuth, buyTicket); // Task 2.2
 
 export default router;

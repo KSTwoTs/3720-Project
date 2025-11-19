@@ -6,6 +6,7 @@
 // Task 6 – Code quality (clean hooks, modular functions, comments)
 
 import React, { useEffect, useRef, useState } from 'react';
+import { useAuth } from '../context/AuthContext.jsx';
 
 // API base URL for the client-service microservice
 // In dev: falls back to localhost:6001
@@ -18,6 +19,7 @@ export default function EventList() {
   const [loading, setLoading] = useState(true); // loading flag for UX feedback
   const [message, setMessage] = useState('');   // visible + screen-reader messages
   const statusRef = useRef(null);               // ref to the aria-live region
+  const { logout } = useAuth();
 
   // === Task 3.1/3.2 ===
   // Fetch all events from client-service and update state.
@@ -67,8 +69,22 @@ export default function EventList() {
   // === Task 3.2: Purchase functionality ===
   async function handleBuy(id, name) {
     try {
-      const res = await fetch(`${API_BASE}/api/events/${id}/purchase`, { method: 'POST' });
+      const res = await fetch(`${API_BASE}/api/events/${id}/purchase`, {
+        method: 'POST',
+        credentials: 'include', // send JWT cookie to protected route
+      });
       const body = await res.json();
+
+      // Handle token expiration / auth errors from backend
+      if (res.status === 401) {
+        if (body && body.code === 'TOKEN_EXPIRED') {
+          announce('Session expired. Please log in again.');
+        } else {
+          announce(body.error || 'Authentication required. Please log in.');
+        }
+        logout(); // clear local user state -> App will show login screen
+        return;
+      }
 
       if (!res.ok) throw new Error(body.error || 'Purchase failed');
 
@@ -120,7 +136,9 @@ export default function EventList() {
                 {/* Task 4.1: Announce dynamic ticket counts politely */}
                 <p>
                   <strong>Tickets:</strong>{' '}
-                  <span aria-live="polite" aria-atomic="true">{ev.tickets}</span>
+                  <span aria-live="polite" aria-atomic="true">
+                    {ev.tickets}
+                  </span>
                 </p>
 
                 {/* Task 3.2 – Purchase Button */}

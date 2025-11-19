@@ -1,6 +1,7 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import EventList from '../EventList.jsx';
+import { AuthProvider } from '../../context/AuthContext.jsx';
 
 beforeEach(() => {
   global.fetch = vi.fn()
@@ -13,7 +14,12 @@ beforeEach(() => {
 });
 
 test('renders events and buys a ticket', async () => {
-  render(<EventList />);
+  render(
+    <AuthProvider>
+      <EventList />
+    </AuthProvider>
+  );
+  
   expect(await screen.findByRole('heading', { name: /Available Events/i })).toBeInTheDocument();
   const buyBtn = await screen.findByRole('button', { name: /Buy one ticket for Jazz Night/i });
   fireEvent.click(buyBtn);

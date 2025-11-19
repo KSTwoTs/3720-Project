@@ -4,9 +4,15 @@
 
 import { render, screen } from '@testing-library/react';
 import App from './App';
+import { AuthProvider } from './context/AuthContext.jsx';
 
 test('renders main heading', () => {
-  render(<App />);
+  render(
+    <AuthProvider>
+      <App />
+    </AuthProvider>
+  );
+  
   const heading = screen.getByRole('heading', { name: /TigerTix Events/i });
   expect(heading).toBeInTheDocument();
 });

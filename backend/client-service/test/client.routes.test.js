@@ -5,6 +5,7 @@ import sqlite3 from 'sqlite3';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import jwt from 'jsonwebtoken';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
@@ -12,6 +13,7 @@ const __dirname  = path.dirname(__filename);
 let app;
 let clientRoutes;     // <-- will hold the router
 let TMP_DB;
+let JWT_SECRET;
 
 // helper to exec SQL
 function execSql(db, sql) {
@@ -20,23 +22,36 @@ function execSql(db, sql) {
   });
 }
 
+// helper to make an Authorization header with a valid JWT
+function makeAuthHeader() {
+  const token = jwt.sign(
+    { sub: 1, email: 'test@example.com' },
+    JWT_SECRET
+  );
+  return `Bearer ${token}`;
+}
+
 beforeAll(async () => {
   // 1) temp DB path + env for the model
   TMP_DB = path.join(process.cwd(), `test-${Date.now()}.sqlite`);
   process.env.DB_PATH = TMP_DB;
 
-  // 2) apply schema from init.sql
+  // 2) JWT secret for requireAuth middleware
+  JWT_SECRET = 'test-secret';
+  process.env.JWT_SECRET = JWT_SECRET;
+
+  // 3) apply schema from init.sql
   const schemaPath = path.resolve(__dirname, '../../shared-db/init.sql');
   const schema = fs.readFileSync(schemaPath, 'utf8');
   const db = new sqlite3.Database(TMP_DB);
   await execSql(db, schema);
   db.close();
 
-  // 3) IMPORT THE ROUTER AFTER DB_PATH IS SET
+  // 4) IMPORT THE ROUTER AFTER DB_PATH IS SET
   //    ensure .js extension and take the default export
   clientRoutes = (await import('../routes/clientRoutes.js')).default;
 
-  // 4) build app
+  // 5) build app
   app = express();
   app.use(cors());
   app.use(express.json());
@@ -65,13 +80,15 @@ describe('Client /api/events', () => {
     );
     const id = row.id;
 
-    const a = await request(app).post(`/api/events/${id}/purchase`);
+    const authHeader = makeAuthHeader();
+
+    const a = await request(app).post(`/api/events/${id}/purchase`).set('Authorization', authHeader);
     expect(a.status).toBe(200);
 
-    const b = await request(app).post(`/api/events/${id}/purchase`);
+    const b = await request(app).post(`/api/events/${id}/purchase`).set('Authorization', authHeader);
     expect(b.status).toBe(200);
 
-    const c = await request(app).post(`/api/events/${id}/purchase`);
+    const c = await request(app).post(`/api/events/${id}/purchase`).set('Authorization', authHeader);
     expect([409, 400]).toContain(c.status);
     db.close();
   });
@@ -86,9 +103,11 @@ describe('Client /api/events', () => {
     );
     const id = row.id;
 
+    const authHeader = makeAuthHeader();
+
     const [r1, r2] = await Promise.all([
-      request(app).post(`/api/events/${id}/purchase`),
-      request(app).post(`/api/events/${id}/purchase`),
+      request(app).post(`/api/events/${id}/purchase`).set('Authorization', authHeader),
+      request(app).post(`/api/events/${id}/purchase`).set('Authorization', authHeader),
     ]);
     expect([r1.status, r2.status].sort()).toEqual([200, 409].sort());
     db.close();
