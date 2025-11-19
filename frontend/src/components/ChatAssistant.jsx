@@ -1,6 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { supportsSTT, supportsTTS, speak, stopSpeaking, createRecognizer, startBeep, stopBeep } from '../lib/voice';
 
+// API base URL for the client-service microservice
+// In dev: falls back to localhost:xxxx
+const API_BASE =
+  import.meta.env.VITE_CLIENT_API_URL || 'http://localhost:6001';
+
+const LLM_BASE =
+  import.meta.env.VITE_LLM_API_URL || 'http://localhost:7000';
+
 export default function ChatAssistant() {
   const [messages, setMessages] = useState([
     { role: 'assistant', text: 'Hi! I can show events and prepare a booking. Try “show events” or “book 2 for Jazz Night”.' }
@@ -37,7 +45,7 @@ export default function ChatAssistant() {
 
   async function fetchEvents() {
     try {
-      const r = await fetch('/api/events');
+      const r = await fetch(`${API_BASE}/api/events`);
       const raw = await r.json();
       const list = asEventArray(raw);
       setEvents(list);
@@ -78,7 +86,7 @@ export default function ChatAssistant() {
     stopSpeaking(); // stop TTS if it was playing
 
     try {
-      const r = await fetch('/api/llm/parse', {
+      const r = await fetch(`${LLM_BASE}/api/llm/parse`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: msg })
@@ -96,7 +104,7 @@ export default function ChatAssistant() {
       if (data.intent === 'propose_booking') {
         let list = events;
         if (!list.length) {
-          const rr = await fetch('/api/events');
+          const rr = await fetch(`${API_BASE}/api/events`);
           const raw = await rr.json();
           list = asEventArray(raw);
           setEvents(list);
@@ -127,7 +135,7 @@ export default function ChatAssistant() {
       const payload = { tickets: proposal.tickets };
       if (proposal.eventId) payload.eventId = proposal.eventId; else payload.eventName = proposal.eventName;
 
-      const r = await fetch('/api/llm/confirm', {
+      const r = await fetch(`${LLM_BASE}/api/llm/confirm`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
