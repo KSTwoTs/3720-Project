@@ -47,7 +47,7 @@ jobs:
           
       - name: Install deps
         working-directory: backend/user-authentication
-        run: npm cpi
+        run: npm ci
 
       - name: Run auth tests
         working-directory: backend/user-authentication
