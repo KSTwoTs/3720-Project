@@ -34,7 +34,26 @@ jobs:
         working-directory: ${{ matrix.service }}
         run: npm test
 
-  # 2) Run frontend tests
+  # 2) Run auth-service tests
+  test-auth-service:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node
+        uses: actions/setup-node@v4
+        with: 
+          node-version: 22
+          
+      - name: Install deps
+        working-directory: backend/user-authentication
+        run: npm cpi
+
+      - name: Run auth tests
+        working-directory: backend/user-authentication
+        run: npm test
+
+  # 3) Run frontend tests
   test-frontend:
     runs-on: ubuntu-latest
     needs: test-backend
@@ -56,10 +75,10 @@ jobs:
         working-directory: frontend
         run: npm run test:run
 
-  # 3) If all tests pass, trigger deployments
+  # 4) If all tests pass, trigger deployments
   deploy:
     runs-on: ubuntu-latest
-    needs: [test-backend, test-frontend]
+    needs: [test-backend, test-auth-service, test-frontend]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
@@ -86,3 +105,9 @@ jobs:
           curl -X POST "$RENDER_LLM_SERVICE_DEPLOY_HOOK"
         env:
           RENDER_LLM_SERVICE_DEPLOY_HOOK: ${{ secrets.RENDER_LLM_SERVICE_DEPLOY_HOOK }}
+
+      - name: Trigger Render auth-service deploy
+        run: |
+          curl -X POST "$RENDER_AUTH_HOOK"
+        env: 
+          RENDER_AUTH_HOOK: ${{ secrets.RENDER_AUTH_HOOK }}
