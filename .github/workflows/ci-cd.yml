@@ -78,7 +78,7 @@ jobs:
   # 4) If all tests pass, trigger deployments
   deploy:
     runs-on: ubuntu-latest
-    needs: [test-backend, test-frontend]
+    needs: [test-backend, test-auth-service, test-frontend]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
