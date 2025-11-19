@@ -19,7 +19,7 @@ export default function EventList() {
   const [loading, setLoading] = useState(true); // loading flag for UX feedback
   const [message, setMessage] = useState('');   // visible + screen-reader messages
   const statusRef = useRef(null);               // ref to the aria-live region
-  const { logout } = useAuth();
+  const { logout, token } = useAuth();
 
   // === Task 3.1/3.2 ===
   // Fetch all events from client-service and update state.
@@ -69,9 +69,15 @@ export default function EventList() {
   // === Task 3.2: Purchase functionality ===
   async function handleBuy(id, name) {
     try {
+
+      const headers = token
+        ? { Authorization: `Bearer ${token}`}
+        : {};
+      
       const res = await fetch(`${API_BASE}/api/events/${id}/purchase`, {
         method: 'POST',
         credentials: 'include', // send JWT cookie to protected route
+        headers,
       });
       const body = await res.json();
 
