@@ -30,7 +30,7 @@ const strictSchema = (obj) => {
 
 const FallbackSuggestions = ['show events', 'book 2 for <event name>'];
 
-// ---- LLM call (Ollama by default; OpenAI optional) -------------------------
+// ---- LLM call (OpenAI default) -------------------------
 async function callLLM(userText, events = []) {
   const provider = (process.env.LLM_PROVIDER || 'ollama').toLowerCase();
 
@@ -179,10 +179,15 @@ app.post('/api/llm/confirm', async (req, res) => {
     const { eventId, eventName, tickets } = req.body || {};
     if (!Number.isInteger(tickets) || tickets < 1) return reply(res, { error: 'Invalid tickets' }, 400);
 
+    const authHeader = req.headers.authorization || '';
+    const axiosConfig = authHeader
+      ? { headers: { Authorization: authHeader } }
+      : {};
+
     // if eventId not provided, resolve by name
     let resolvedId = eventId;
     if (!resolvedId && eventName) {
-      const { data: events } = await axios.get(`${CLIENT_URL}/api/events`);
+      const { data: events } = await axios.get(`${CLIENT_URL}/api/events`, axiosConfig);
       const n = normalize(eventName);
       // simple fuzzy: startsWith or includes
       const match = events.find(
@@ -193,7 +198,7 @@ app.post('/api/llm/confirm', async (req, res) => {
     }
     if (!resolvedId) return reply(res, { error: 'Missing eventId or eventName' }, 400);
 
-    const r = await axios.post(`${CLIENT_URL}/api/events/${resolvedId}/purchase`, { tickets });
+    const r = await axios.post(`${CLIENT_URL}/api/events/${resolvedId}/purchase`, { tickets }, axiosConfig);
     return reply(res, r.data, 200);
   } catch (e) {
     if (e.response) return reply(res, e.response.data, e.response.status);

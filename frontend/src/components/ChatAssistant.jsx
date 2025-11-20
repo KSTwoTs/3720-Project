@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { supportsSTT, supportsTTS, speak, stopSpeaking, createRecognizer, startBeep, stopBeep } from '../lib/voice';
+import { useAuth } from '../context/AuthContext.jsx';
 
 // API base URL for the client-service microservice
 // In dev: falls back to localhost:xxxx
@@ -25,6 +26,8 @@ export default function ChatAssistant() {
 
   const recognizerRef = useRef(null);
   const liveRef = useRef();
+
+  const { token } = useAuth();
 
   const push = (m) => {
     setMessages((prev) => {
@@ -135,9 +138,16 @@ export default function ChatAssistant() {
       const payload = { tickets: proposal.tickets };
       if (proposal.eventId) payload.eventId = proposal.eventId; else payload.eventName = proposal.eventName;
 
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      
       const r = await fetch(`${LLM_BASE}/api/llm/confirm`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(payload)
       });
       const data = await r.json();
