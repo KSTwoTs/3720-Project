@@ -53,8 +53,8 @@ describe('LLM endpoints', () => {
     expect(res.body.tickets).toBe(1);
 
     // sanity: ensure the expected downstream calls were made
-    expect(axios.get).toHaveBeenCalledWith(`${process.env.CLIENT_URL}/api/events`);
-    expect(axios.post).toHaveBeenCalledWith(`${process.env.CLIENT_URL}/api/events/1/purchase`, { tickets: 1 });
+    expect(axios.get).toHaveBeenCalledWith(`${process.env.CLIENT_URL}/api/events`, {});
+    expect(axios.post).toHaveBeenCalledWith(`${process.env.CLIENT_URL}/api/events/1/purchase`, { tickets: 1 }, {});
   });
 
   test('confirm returns 404 when event cannot be resolved', async () => {
