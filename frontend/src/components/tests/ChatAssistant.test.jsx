@@ -2,6 +2,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import ChatAssistant from '../ChatAssistant';
+import { AuthProvider } from '../../context/AuthContext.jsx';
 
 // Silence voice features in tests
 vi.mock('../../lib/voice', () => ({
@@ -64,7 +65,11 @@ afterEach(() => {
 });
 
 test('proposes then confirms booking', async () => {
-  render(<ChatAssistant />);
+  render(
+    <AuthProvider>
+      <ChatAssistant />
+    </AuthProvider>
+    );
 
   const input = screen.getByLabelText(/chat input/i);
   fireEvent.change(input, { target: { value: 'book 2 for Jazz Night' } });
