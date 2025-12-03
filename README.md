@@ -1,15 +1,15 @@
-# TigerTix
+# TigerTix Overview
 
-A minimal two-service ticketing app:
+TigerTix enables:
+- Event creation (Admin)
+- Event listing & ticket purchasing (Client)
+- User registration, login, logout, and session handling (Auth)
+- Natural Language Understanding for booking tickets (LLM → Confirm booking flow)
+- React frontend with accessible UI and live updates
+- SQLite-backed persistence with consistent schema across microservices
+The project demonstrates a production-ready microservice architecture with authentication, routing, concurrency safety, LLM-powered workflows, and strong testing practices.
 
-- **Admin Service (Express, 5001):** create events (secured by API key).
-- **Client Service (Express, 6001):** list events and purchase tickets (transactional).
-- **Frontend (React + Vite, 5173):** browse events, buy tickets with accessible UI.
-- **Shared SQLite DB:** single source of truth for both services.
-
----
-
-## 1. Prerequisites
+## Prerequisites
 
 - Node.js ≥ 18  
 - npm ≥ 9  
@@ -18,15 +18,12 @@ A minimal two-service ticketing app:
 - Postman (optional, for testing APIs)  
 - SQLite CLI (optional, for inspecting the DB)
 
----
-
-## 2. Project Structure
+## Project Structure
 ```text
-TigerTix/
 ├── backend/
 │ ├── shared-db/
-│ │ ├── database.sqlite # created automatically if missing
-│ │ └── init.sql # DB schema
+│ │ ├── database.sqlite       # created automatically if missing
+│ │ └── init.sql              # DB schema
 │ ├── admin-service/
 │ │ ├── controllers/
 │ │ │ └── adminController.js
@@ -42,12 +39,14 @@ TigerTix/
 │ │ ├── package.json
 │ │ ├── server.js
 │ │ ├── setup.js
-│ │ └── .env # ADMIN_API_KEY=..., PORT=5001
+│ │ └── .env                  # ADMIN_API_KEY=..., PORT=5001
 │ ├── client-service/
 │ │ ├── controllers/
 │ │ │ └── clientController.js
 │ │ ├── models/
 │ │ │ └── clientModel.js
+│ │ ├── middleware/
+│ │ │ └── authMiddleware.js
 │ │ ├── routes/
 │ │ │ └── clientRoutes.js
 │ │ ├── tests/
@@ -62,15 +61,40 @@ TigerTix/
 │ │ ├── package.json
 │ │ ├── server.js
 │ │ └── .env
+│ ├── user-authentication/
+│ │ ├── controllers/
+│ │ │ └── authController.js
+│ │ ├── middleware/
+│ │ │ └── authMiddleware.js
+│ │ ├── models/
+│ │ │ └── userModel.js
+│ │ ├── routes/
+│ │ │ └── authRoutes.js
+│ │ ├── tests/
+│ │ │ └── auth.test.mjs
+│ │ ├── package-lock.json
+│ │ ├── package.json
+│ │ ├── server.mjs
+│ │ ├── databse.js
+│ │ ├── vitest.config.mjs
+│ │ └── .env
 ├── frontend/
 │ │ ├── public/ 
 │ │ ├── src/
 │ │ │ ├── components/
+│ │ │ │ ├── auth/
+│ │ │ │ │ ├── Login.jsx
+│ │ │ │ │ ├── Login.test.jsx
+│ │ │ │ │ ├── Register.jsx
+│ │ │ │ │ └── Register.test.jsx
 │ │ │ │ ├── tests/
 │ │ │ │ │ ├── ChatAssistant.test.jsx
 │ │ │ │ │ └── EventList.test.jsx
 │ │ │ │ ├── ChatAssistant.jsx
 │ │ │ │ └── EventList.jsx
+│ │ │ ├── context/
+│ │ │ │ ├── AuthContext.jsx
+│ │ │ │ └── AuthContext.test.jsx
 │ │ │ ├── lib/
 │ │ │ │ └── voice.js
 │ │ │ ├── App.css
@@ -87,13 +111,75 @@ TigerTix/
 │ └── vite.config.js
 ```
 
-**Ports:** Admin 5001 | Client 6001 | LLM 7001 | Frontend 5173
+**Local-Host Ports:** Admin 5001 | Client 6001 | LLM 7001 | Frontend 5173
 
----
+## Architecture Summary
 
-## 3. Getting Started (VS Code)
+```
+                      ┌────────────────────────────────┐
+                      │        Frontend (Vercel)       │
+                      │ React / AuthContext / Chat UI  │
+                      └──────────────┬─────────────────┘
+                                     │
+                                     │ HTTPS requests
+                                     ▼
+     ┌─────────────────────────────────────────────────────────────────────┐
+     │                    Backend (Render)                                 │
+     │                                                                     │
+     │   ┌────────────────────────┐   issues JWTs   ┌──────────────────────┐
+     │   │ User-Auth Service      │◄────────────────►   Frontend Login     │
+     │   │ register/login/logout  │                 └──────────────────────┘
+     │   └───────────┬────────────┘                                        
+     │               │ validates JWT                                       
+     │               ▼                                                     
+     │   ┌────────────────────────┐    protected routes                    
+     │   │ Client-Service         │◄───────────────────────────────────────┐
+     │   │ events + purchase      │                                        │
+     │   └───────────┬────────────┘                                        │
+     │               │                                                     │
+     │               ▼                                                     │
+     │   ┌────────────────────────┐                                        │
+     │   │ LLM-Service            │──────── confirms bookings ─────────────┘
+     │   │ parse intent / confirm │  (forwards Authorization header)       
+     │   └────────────────────────┘                                        
+     │                                                                     
+     └─────────────────────────────────────────────────────────────────────┘
+```
+**Data Flow Summary**
+- User logs in → receives JWT cookie + token in memory
+- Frontend sends Authorization: Bearer <token> for protected actions
+- Client-service validates token before allowing purchases
+- LLM-service uses token to perform authenticated downstream operations
+- Events update immediately on purchase
 
-Open the `TigerTix/` folder in **VS Code**.
+## Tech Stack
+
+**Frontend**
+- React (Vite)
+- React Router
+- AuthContext (custom)
+- ARIA accessibility & live regions
+- Jest / Vitest / React Testing Library
+**Backend (Microservices via Express)**
+- Admin Service
+- Client Service
+- User-Authentication Service
+- LLM Service (axios + rule-based NLU)
+**Database**
+- SQLite (local + Render deployment)
+- Schema: init.sql shared across services
+**Other**
+- bcryptjs for password hashing
+- jsonwebtoken for issuing/validating JWTs
+- axios for internal service-to-service communication
+- Render deployment for all backend microservices
+- Vercel deployment for frontend
+- GitHub Actions CI/CD
+- LLM provider (e.g., OpenAI gpt-4o-mini) via API key
+
+## Getting Started (Local-Host through VS Code)
+
+Clone the repo, then open the root folder in **VS Code**.
 
 Open **four terminals** (Terminal → New Terminal).
 
@@ -101,7 +187,42 @@ If running on Windows PowerShell, temporarily allow scripts:
 ```bash
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 ```
-## 4. Install & Run — Back-end services
+
+## Environment Variable Setup
+Create .env files for each microservice. These files go in the root directory of the microservice it pertains to. 
+
+Admin-Service
+```
+ADMIN_API_KEY=your_secret_key
+PORT=5001
+```
+
+Auth-Service
+```
+PORT=8001
+JWT_SECRET=your_secret_key
+FRONTEND_ORIGIN=http://localhost:5173
+AUTH_DB_PATH=../shared-db/database.sqlite
+NODE_ENV=development
+```
+
+Client-Service
+```
+PORT=6001
+FRONTEND_ORIGIN=http://localhost:5173
+JWT_SECRET=your_secret_key
+```
+
+LLM-Service
+```
+PORT=7001
+CLIENT_URL=http://localhost:6001
+LLM_PROVIDER-openai
+OPENAI_MODEL=gpt-4o-mini
+OPENAI_API_KEY=your_generated_key_from_openai_api_key_site
+```
+
+## Install & Run — Back-end services
 
 Terminal 1 **admin-service**
 ```
@@ -145,9 +266,26 @@ npm install
 npm start
 ```
 
-## 5. Install & Run — Frontend (5173)
+You should see:
+```
+llm service running on port 7001
+```
 
-Terminal 4
+Terminal 4 **user-authentication**
+```
+cd backend/user-authentication
+npm install
+npm start
+```
+
+You should see:
+```
+user-authentication service listening on port 8001
+```
+
+## Install & Run — Frontend (5173)
+
+Terminal 5
 ```
 cd frontend
 npm install
@@ -157,8 +295,8 @@ npm run dev
 Open the printed URL (usually http://localhost:5173).
 You’ll see a list of events (empty at first) and a Buy Ticket button per event.
 
-## 6. Using the APIs (Postman / cURL)
-6.1 Create an event (Admin, requires API key)
+## Using the APIs (Postman / cURL)
+Create an event (Admin, requires API key)
 
 Postman
 Method: POST
@@ -180,13 +318,13 @@ curl -X POST http://localhost:5001/api/admin/events \
   -H "x-api-key: super-secret-key-change-me" \
   -d '{"name":"CS Club Expo","date":"2025-11-25","tickets":100}'
 ```
-6.2 List events (Client)
+List events (Client)
 Method: GET
 URL: http://localhost:6001/api/events
 ```
 curl http://localhost:6001/api/events
 ```
-6.3 Purchase a ticket (Client)
+Purchase a ticket (Client)
 Method: POST
 URL: http://localhost:6001/api/events/:id/purchase
 Replace :id with a real ID returned by /api/events:
@@ -201,27 +339,20 @@ Expected outcomes:
 409 sold out
 500 server error (check logs)
 
-## 7. Frontend Usage
+## Frontend Usage
 
-Visit http://localhost:5173
+**Visit http://localhost:5173 or 3720-project.vercel.app**
+- Events load from /api/events
+- Click Buy Ticket → status message appears
+- Ticket count refreshes automatically
+- Screen readers announce updates via aria-live
 
-Events load from /api/events
+**Accessibility Highlights**
+- Semantic structure (header, main, section, ul, time)
+- Skip link + visible focus outlines for keyboard users
+- aria-live announcements for ticket changes
 
-Click Buy Ticket → status message appears
-
-Ticket count refreshes automatically
-
-Screen readers announce updates via aria-live
-
-Accessibility Highlights
-
-Semantic structure (header, main, section, ul, time)
-
-Skip link + visible focus outlines for keyboard users
-
-aria-live announcements for ticket changes
-
-## 8. Concurrency & Consistency
+## Concurrency & Consistency
 
 The client-service uses SQL transactions:
 ```
@@ -238,7 +369,7 @@ Guaranteed: no negative tickets, no double-sell.
 Quick test:
 Open two Postman tabs with POST /api/events/:id/purchase and hit Send quickly on both; you’ll see one success and one 409.
 
-## 9. Postman CSV Runner (optional seeding)
+## Postman CSV Runner (optional seeding)
 
 Create events.csv anywhere on your machine:
 ```
@@ -260,14 +391,14 @@ Body:
 ```
 Run the collection using events.csv as data file.
 
-## 10. Inspecting the Database (optional)
+## Inspecting the Database (optional)
 Use sqlite extensions in vscode or the following:
 ```
 sqlite3 backend/shared-db/database.sqlite ".schema events"
 sqlite3 backend/shared-db/database.sqlite "SELECT id,name,date,tickets FROM events;"
 ```
 
-## 11. Common Issues & Fixes
+## Common Issues & Fixes
 
 401 Unauthorized (Admin POST)
 Missing or wrong x-api-key. Ensure .env exists in admin-service and server was restarted.
@@ -284,7 +415,7 @@ Ensure frontend/index.html exists and your dev server is run from frontend/.
 Database locked
 Very rare; try stopping other services briefly or ensure you aren’t opening the .sqlite file in a GUI at the same time.
 
-## 12. API Reference (quick)
+## API Reference (quick)
 
 Admin Service (5001):
 
@@ -298,7 +429,7 @@ GET /api/events → { events: [] }
 
 POST /api/events/:id/purchase → { message, eventId, remaining }
 
-## 13. Scripts (optional enhancements)
+## Scripts (optional enhancements)
 
 Add to backend/admin-service/package.json:
 ```
@@ -324,7 +455,7 @@ Add to frontend/package.json:
   "preview": "vite preview"
 }
 ```
-## 14. Code Quality
+## Code Quality
 
 Separation of concerns: routes → controllers → models
 
@@ -336,7 +467,7 @@ In-code comments mapped to rubric tasks
 
 Basic test scaffold (App.test.js)
 
-## 15. Automated Testing
+## Automated Testing (Regression Tests)
 
 All tests run locally—no external APIs required.
 
@@ -365,6 +496,13 @@ server.js exports the Express app (doesn’t auto-listen during tests).
 axios mocked to simulate /api/events lookups and downstream purchase.
 Cases: parse proposal, confirm success, confirm unknown → 404.
 
+**User-Authentication (Vitest)**
+```
+cd backend/user-authentication
+npm test
+```
+Cases: register, duplicate email, login success/failure, /me with/without token, logout, token expiration.
+
 **Frontend (Vitest + RTL + JSDOM)**
 ```
 cd frontend
@@ -377,7 +515,13 @@ Cases:
   EventList.test.jsx — buys a ticket, checks live region + refresh.
   ChatAssistant.test.jsx — propose → confirm; assertions tolerate aria-live duplication.
 
-## 16. Manual Testing
+## CI/CD (GitHub Actions, Render, Vercel)
+- GitHub Actions runs all backend + frontend test suites on each push.
+- Deploys only occur if all tests pass (regression safety).
+- Backend microservices are deployed to Render; frontend is deployed to Vercel.
+- Environment variables (DB paths, JWT secret, API URLs) are configured in each platform’s dashboard.
+
+## Manual Testing
 
 **Text NL flow**
   “show events” → list appears in chat.
@@ -393,7 +537,11 @@ Cases:
   Seed event with 1 ticket.
   Fire two purchases in quick succession → observe one 200, one 409.
 
-## 17. Credits
+## License
+This project is licensed under the MIT License.
+See: https://choosealicense.com/licenses/mit/
+
+## Credits
 
 Built for CPSC 3720.
 Team: Trenton McDonald, Michael Dawson, Jeffrey Moon
