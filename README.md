@@ -152,6 +152,29 @@ The project demonstrates a production-ready microservice architecture with authe
 - LLM-service uses token to perform authenticated downstream operations
 - Events update immediately on purchase
 
+## TigerTix Microservice Route Reference (Production Deployments) (Render + Vercel)
+```
+Admin-Service (Render)
+  POST https://tigertix-admin-service.onrender.com/api/admin/events
+
+Client-Service (Render)
+  GET  https://tigertix-client-service.onrender.com/api/events
+  POST https://tigertix-client-service.onrender.com/api/events/:id/purchase
+
+Auth-Service (Render)
+  POST https://tigertix-user-auth-service.onrender.com/api/auth/register
+  POST https://tigertix-user-auth-service.onrender.com/api/auth/login
+  GET  https://tigertix-user-auth-service.onrender.com/api/auth/me
+  POST https://tigertix-user-auth-service.onrender.com/api/auth/logout
+
+LLM-Service (Render)
+  POST https://tigertix-llm-service.onrender.com/api/llm/parse
+  POST https://tigertix-llm-service.onrender.com/api/llm/confirm
+
+Frontend (Vercel)
+  https://3720-project.vercel.app
+```
+
 ## Tech Stack
 
 **Frontend**
