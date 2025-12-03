@@ -18,6 +18,9 @@ The project demonstrates a production-ready microservice architecture with authe
 - Postman (optional, for testing APIs)  
 - SQLite CLI (optional, for inspecting the DB)
 
+## Demo Video
+https://youtu.be/mntsyxXo_rI
+
 ## Project Structure
 ```text
 ├── backend/
